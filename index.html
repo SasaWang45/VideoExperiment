@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepfakeFalseMemoryWithEyeTracking</title>
+    <script src="https://unpkg.com/jspsych@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-preload@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-video-slider-response@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-video-button-response@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-button-response@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-survey-html-form@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-external-html@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-instructions@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-fullscreen@latest" type="text/javascript"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-canvas-keyboard-response@latest"></script>
+    <script src="https://cdn.jsdelivr.net/gh/jspsych/jspsych@latest/examples/js/webgazer/webgazer.js"></script>
+    <script src="https://unpkg.com/@jspsych/extension-webgazer@latest"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-webgazer-init-camera@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-webgazer-calibrate@2.1.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-webgazer-validate@2.1.0"></script>
+    <script src="./Videos.js"></script>
+    <script src="./EyeTracking.js"></script>
+    <script src="./Instructions.js"></script>
+    <script src="./Block1_LearningPhase.js"></script>
+    <script src="./Block2_IdentificationPhase.js"></script>
+    <script src="./Block3_RecognitionPhase.js"></script>
+    <script src="./Mazelevel.js"></script>
+    <script src="./Pacman.js"></script>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/jspsych@8.2.0/css/jspsych.css"
+    />
+    <link href="https://unpkg.com/jspsych@latest/css/jspsych.css" rel="stylesheet" type="text/css" />
+
+    <style>
+        .jspsych-btn{
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <script>
+    var Gender = {
+        type: jsPsychHtmlButtonResponse,
+        stimulus: '<p style="font-size:30px;line-height:1.5;">请填写以下人口学信息</p>',
+        choices: ['男',
+            '女',
+            '其他'],
+        post_trial_gap: 500,
+        data: {
+            task: "demographics",
+            varname: "gender"
+        },
+        on_finish: function(data) {
+            if (data.response == 0) {
+            data.response = "男";
+            } else if (data.response == 1) {
+            data.response = "女";
+            } else {
+            data.response = "其他";
+            }
+        }
+        };
+
+    var Age = {
+        type: jsPsychSurveyHtmlForm,
+        preamble: '<p style="font-size:30px;line-height:1.5;">请填写您的年龄</p>',
+        html: `<p>
+        <input name="age" type="number" placeholder="10-99" min = "10" max = "99"
+        oninput = "if(value,length>2) value = value.slice(0, 2)" required
+        stlye="border-radius: 5px; padding: 5px; margin-bottom: 10px; width: 100%; height: 50px; font-size:24px;"/>
+        </p>`,
+        post_trial_gap: 500,
+        button_label: "继续",
+        data: {
+            task: "demographics",
+            varname: "age"
+        }}
+
+    var trial_demographics = {
+        timeline: [Gender, Age],
+        data: {
+            task: "demographics"
+        },
+        record_data: true
+    };
+
+    var jsPsych = initJsPsych({
+    //       on_interaction_data_update: function(data) {
+    // console.log(JSON.stringify(data));},
+        extensions: [
+            {type: jsPsychExtensionWebgazer}
+        ], 
+        // show_progress_bar: true,
+      on_finish: function() {
+        // 获取人口学变量值
+        let demographics_data = jsPsych.data.get().filter({
+        task: "demographics"
+        }).values();
+        // 获取性别值
+        let gender = demographics_data.find(item => item.varname === "gender").response;
+        // 获取年龄值
+        let age = demographics_data.find(item => item.varname === "age").response.Q0;
+
+        // 将人口学变量添加到每个试次数据中
+        jsPsych.data.addProperties({
+        age: age, gender: gender
+        });
+        var all_data = jsPsych.data.get().csv();
+        // 结束后显示数据
+        jsPsych.data.get().localSave("csv", "all_data.csv")
+        // 保存本地数据
+        document.write("<h1 style='text-align:center; height:500pt; line-height:500pt'>实验结束，感谢您的参与！</h1>");
+      }
+    });
+
+    const generatedID = jsPsych.randomization.randomID(13);
+        jsPsych.data.addProperties({
+        subID: generatedID
+        });
+
+
+    var timeline = [];
+    jsPsych.data.addProperties({experiment: 'DeepfakeFalseMemoryWithEyeTracking'});
+
+    
+    // 注视点
+    var trial_fixation = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: '<div style="font-size:60px;">+</div>',
+      choices: "NO_KEYS",
+      trial_duration: 1000,
+      record_data: false,
+      data: {
+        task: "fixation"
+      }
+    };
+
+    // 全屏
+    var trial_fullscreen = {
+      type: jsPsychFullscreen,
+      fullscreen_mode: true,
+      message:`<p style="font-size:30px;line-height:1.5;">请在全屏模式下进行实验</p>`,
+      button_label: "开始实验",
+      data: {
+        task: "fullscreen"
+      },
+      record_data: false
+    };
+
+    //指导语 <p style='font-size:30px;font-weight:bold'>你认为视频中的人是否可信？</p>
+    var block1_procedure = getBlock1Procedure(jsPsych, Videos);
+    var block2_procedure = getBlock2Procedure(jsPsych, Videos);
+    var block3_procedure = getBlock3Procedure(jsPsych, Videos);
+
+    var pacmanEndCallback = function(state) {
+        gameState = state;
+        jsPsych.finishTrial({ gameState: state });
+    };
+
+
+    timeline.push(init_camera_trial, block_calibration);
+    timeline.push(trial_fullscreen);
+    timeline.push(instruction_trial);
+    timeline.push(trial_demographics);
+    timeline.push(instructions_1);
+    timeline.push(block1_procedure);
+    timeline.push(instruction_distractor);
+    timeline.push(trial_distractor);
+    timeline.push(block_calibration);
+    timeline.push(instructions_2);
+    timeline.push(block2_procedure);
+    timeline.push(instruction_distractor);
+    timeline.push(trial_distractor);
+    timeline.push(block_calibration);
+    timeline.push(instructions_3);
+    timeline.push(block3_procedure);
+
+    jsPsych.run(timeline);
+    </script>
+</body>
+</html>
